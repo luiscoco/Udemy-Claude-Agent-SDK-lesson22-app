@@ -1,0 +1,273 @@
+{
+  "lanes": [
+    "Student UI",
+    "Node host",
+    "SDK + Claude",
+    "MCP handler",
+    "HTTP APIs"
+  ],
+  "arrows": [
+    [
+      0,
+      1,
+      "1. Validate the task"
+    ],
+    [
+      1,
+      3,
+      "2. Describe typed coordinates"
+    ],
+    [
+      1,
+      3,
+      "3. Define name description and handler"
+    ],
+    [
+      1,
+      3,
+      "4. Add an optional parameter"
+    ],
+    [
+      3,
+      3,
+      "5. Apply the default inside the handler"
+    ],
+    [
+      1,
+      2,
+      "6. Wrap tools in a server"
+    ],
+    [
+      1,
+      2,
+      "7. Register the server namespace"
+    ],
+    [
+      1,
+      2,
+      "8. Pre-approve the intended calls"
+    ],
+    [
+      1,
+      2,
+      "9. Start one real SDK query"
+    ],
+    [
+      2,
+      3,
+      "10. Observe the actual tool request"
+    ],
+    [
+      3,
+      4,
+      "11. Fetch the real forecast"
+    ],
+    [
+      3,
+      2,
+      "12. Return a tool content block"
+    ],
+    [
+      1,
+      0,
+      "13. Render the answer and evidence"
+    ]
+  ],
+  "steps": [
+    {
+      "number": 1,
+      "title": "Validate the task",
+      "source": "src/agent.ts",
+      "code": "return { mode: (value as RunConfig).mode };\n}\nexport function approval(mode: Mode) {\n  if (mode === \"course-api\") return [\"mcp__course__get_lesson\"];",
+      "language": "typescript",
+      "explanation": "Accept a listed classroom task. The browser does not choose arbitrary endpoints or define executable handlers.",
+      "firstLine": 48,
+      "lastLine": 51,
+      "anchors": [
+        "return { mode: (value as RunConfig).mode };"
+      ],
+      "sourceSHA256": "de9548b762ffb3bc2dd54202a1c06c1bc59495ddb1e7d0aec256b5e45f75dd0c",
+      "narration": "Step 1. Accept a listed classroom task. The browser does not choose arbitrary endpoints or define executable handlers. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 2,
+      "title": "Describe typed coordinates",
+      "source": "src/weather.ts",
+      "code": "export const coordinates = {\n  latitude: z.number().min(-90).max(90).describe(\"Latitude coordinate\"),\n  longitude: z.number().min(-180).max(180).describe(\"Longitude coordinate\"),\n};",
+      "language": "typescript",
+      "explanation": "Zod constrains latitude and longitude. Field descriptions help the model supply the intended values.",
+      "firstLine": 5,
+      "lastLine": 8,
+      "anchors": [
+        "export const coordinates = {"
+      ],
+      "sourceSHA256": "68a7a9740e5a8d753fdc94522e1f52712f5723c2d3ed9443de4df7ac9eec0786",
+      "narration": "Step 2. Zod constrains latitude and longitude. Field descriptions help the model supply the intended values. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 3,
+      "title": "Define name description and handler",
+      "source": "src/weather.ts",
+      "code": "const getTemperature = tool(\n    \"get_temperature\",\n    \"Get the current Open-Meteo temperature in Fahrenheit at coordinates\",\n    coordinates,\n    async (args) => {",
+      "language": "typescript",
+      "explanation": "tool() joins the unique name, model-readable description, schema and asynchronous handler. Handler arguments are inferred from the schema.",
+      "firstLine": 77,
+      "lastLine": 81,
+      "anchors": [
+        "const getTemperature = tool("
+      ],
+      "sourceSHA256": "68a7a9740e5a8d753fdc94522e1f52712f5723c2d3ed9443de4df7ac9eec0786",
+      "narration": "Step 3. tool() joins the unique name, model-readable description, schema and asynchronous handler. Handler arguments are inferred from the schema. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 4,
+      "title": "Add an optional parameter",
+      "source": "src/weather.ts",
+      "code": "hours: z\n    .number()\n    .int()\n    .min(1)\n    .max(24)\n    .optional()",
+      "language": "typescript",
+      "explanation": "The second tool adds an optional integer from one through twenty-four. Optional means callers may omit it; it does not insert the default.",
+      "firstLine": 11,
+      "lastLine": 16,
+      "anchors": [
+        "hours: z"
+      ],
+      "sourceSHA256": "68a7a9740e5a8d753fdc94522e1f52712f5723c2d3ed9443de4df7ac9eec0786",
+      "narration": "Step 4. The second tool adds an optional integer from one through twenty-four. Optional means callers may omit it; it does not insert the default. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 5,
+      "title": "Apply the default inside the handler",
+      "source": "src/weather.ts",
+      "code": "const hours = args.hours ?? 12;\n      try {\n        const { data, httpStatus } = await fetchForecast(\n          args.latitude,",
+      "language": "typescript",
+      "explanation": "Use nullish coalescing inside the handler. Inspect actual args to distinguish omission from an explicit twelve or six.",
+      "firstLine": 123,
+      "lastLine": 126,
+      "anchors": [
+        "const hours = args.hours ?? 12;"
+      ],
+      "sourceSHA256": "68a7a9740e5a8d753fdc94522e1f52712f5723c2d3ed9443de4df7ac9eec0786",
+      "narration": "Step 5. Use nullish coalescing inside the handler. Inspect actual args to distinguish omission from an explicit twelve or six. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 6,
+      "title": "Wrap tools in a server",
+      "source": "src/weather.ts",
+      "code": "return createSdkMcpServer({\n    name: \"weather\",\n    version: \"1.0.0\",\n    tools: [getTemperature, getPrecipitationChance],\n    alwaysLoad: true,\n  });",
+      "language": "typescript",
+      "explanation": "The weather server contains both tool definitions and runs in the Node host process. alwaysLoad keeps these small schemas eager for this lesson.",
+      "firstLine": 162,
+      "lastLine": 167,
+      "anchors": [
+        "return createSdkMcpServer({"
+      ],
+      "sourceSHA256": "68a7a9740e5a8d753fdc94522e1f52712f5723c2d3ed9443de4df7ac9eec0786",
+      "narration": "Step 6. The weather server contains both tool definitions and runs in the Node host process. alwaysLoad keeps these small schemas eager for this lesson. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 7,
+      "title": "Register the server namespace",
+      "source": "src/agent.ts",
+      "code": "const mcpServers: NonNullable<Options[\"mcpServers\"]> =\n    c.mode === \"course-api\"\n      ? { course: createCourseServer(record) }\n      : { weather: weatherServer };\n  const options: Options = {\n    model: MODEL,",
+      "language": "typescript",
+      "explanation": "Register weather or the local course server. The registration key becomes the middle segment of the fully qualified MCP tool name.",
+      "firstLine": 86,
+      "lastLine": 91,
+      "anchors": [
+        "const mcpServers: NonNullable<Options[\"mcpServers\"]> ="
+      ],
+      "sourceSHA256": "de9548b762ffb3bc2dd54202a1c06c1bc59495ddb1e7d0aec256b5e45f75dd0c",
+      "narration": "Step 7. Register weather or the local course server. The registration key becomes the middle segment of the fully qualified MCP tool name. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 8,
+      "title": "Pre-approve the intended calls",
+      "source": "src/agent.ts",
+      "code": "if (mode === \"no-approval\") return [];\n  if ([\"rain-default\", \"rain-six\", \"both\"].includes(mode))\n    return [\"mcp__weather__*\"];\n  return [\"mcp__weather__get_temperature\"];",
+      "language": "typescript",
+      "explanation": "Use the full tool name or the weather wildcard. Empty allowedTools does not remove tools; unresolved calls reach this app\u2019s denying callback.",
+      "firstLine": 52,
+      "lastLine": 55,
+      "anchors": [
+        "if (mode === \"no-approval\") return [];"
+      ],
+      "sourceSHA256": "de9548b762ffb3bc2dd54202a1c06c1bc59495ddb1e7d0aec256b5e45f75dd0c",
+      "narration": "Step 8. Use the full tool name or the weather wildcard. Empty allowedTools does not remove tools; unresolved calls reach this app\u2019s denying callback. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 9,
+      "title": "Start one real SDK query",
+      "source": "src/agent.ts",
+      "code": "const run = query({ prompt: input(), options });\n  let text = \"\",\n    status = \"no_result\",\n    sessionId = \"\",",
+      "language": "typescript",
+      "explanation": "An asynchronous input generator keeps the query open for in-process MCP exchange. The SDK handles the model and tool orchestration.",
+      "firstLine": 152,
+      "lastLine": 155,
+      "anchors": [
+        "const run = query({ prompt: input(), options });"
+      ],
+      "sourceSHA256": "de9548b762ffb3bc2dd54202a1c06c1bc59495ddb1e7d0aec256b5e45f75dd0c",
+      "narration": "Step 9. An asynchronous input generator keeps the query open for in-process MCP exchange. The SDK handles the model and tool orchestration. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 10,
+      "title": "Observe the actual tool request",
+      "source": "src/agent.ts",
+      "code": "if (block.type === \"tool_use\") {\n            attemptedTools.push(block.name);\n            emit({ type: \"tool\", name: block.name, args: block.input });\n          }\n        }",
+      "language": "typescript",
+      "explanation": "Inspect an actual assistant tool_use block. A request or answer in prose is not proof that the handler completed.",
+      "firstLine": 180,
+      "lastLine": 184,
+      "anchors": [
+        "if (block.type === \"tool_use\") {"
+      ],
+      "sourceSHA256": "de9548b762ffb3bc2dd54202a1c06c1bc59495ddb1e7d0aec256b5e45f75dd0c",
+      "narration": "Step 10. Inspect an actual assistant tool_use block. A request or answer in prose is not proof that the handler completed. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 11,
+      "title": "Fetch the real forecast",
+      "source": "src/weather.ts",
+      "code": "const response = await fetcher(forecastUrl(latitude, longitude), {\n    signal: AbortSignal.timeout(20_000),\n  });\n  if (!response.ok) throw new Error(\"Open-Meteo HTTP \" + response.status);\n  return {",
+      "language": "typescript",
+      "explanation": "The handler requests a fixed Open-Meteo endpoint with a timeout and checks HTTP status. The response schema rejects malformed service data.",
+      "firstLine": 44,
+      "lastLine": 48,
+      "anchors": [
+        "const response = await fetcher(forecastUrl(latitude, longitude), {"
+      ],
+      "sourceSHA256": "68a7a9740e5a8d753fdc94522e1f52712f5723c2d3ed9443de4df7ac9eec0786",
+      "narration": "Step 11. The handler requests a fixed Open-Meteo endpoint with a timeout and checks HTTP status. The response schema rejects malformed service data. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 12,
+      "title": "Return a tool content block",
+      "source": "src/weather.ts",
+      "code": "return { content: [{ type: \"text\", text: JSON.stringify(output) }] };\n      } catch {\n        const output =\n          \"Weather service could not return a valid forecast. No cached or invented weather is substituted.\";\n        record({",
+      "language": "typescript",
+      "explanation": "Return actual API data in the required content array. The SDK supplies this result to Claude so it can compose an answer.",
+      "firstLine": 102,
+      "lastLine": 106,
+      "anchors": [
+        "return { content: [{ type: \"text\", text: JSON.stringify(output) }] };"
+      ],
+      "sourceSHA256": "68a7a9740e5a8d753fdc94522e1f52712f5723c2d3ed9443de4df7ac9eec0786",
+      "narration": "Step 12. Return actual API data in the required content array. The SDK supplies this result to Claude so it can compose an answer. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 13,
+      "title": "Render the answer and evidence",
+      "source": "src/client.ts",
+      "code": "if (e.type === \"answer\") renderMarkdown($(\"answer\"), e.text);\n  if (e.type === \"result\") {\n    $(\"status\").textContent = e.status;",
+      "language": "typescript",
+      "explanation": "Render and sanitize actual Markdown. Keep model text beside handler evidence, HTTP status, parameter choices and permission requests.",
+      "firstLine": 26,
+      "lastLine": 28,
+      "anchors": [
+        "if (e.type === \"answer\") renderMarkdown($(\"answer\"), e.text);"
+      ],
+      "sourceSHA256": "42283b46803847a0aa78ad684be20713308fc4e9282b7424d3a02d4fa689ff01",
+      "narration": "Step 13. Render and sanitize actual Markdown. Keep model text beside handler evidence, HTTP status, parameter choices and permission requests. This source excerpt shows the corresponding application statement."
+    }
+  ]
+}
